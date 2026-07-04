@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Recruiter Pro</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+  :root{
+    --blue:#2563EB;--blue-light:#3b82f6;--blue-dark:#1d4ed8;
+    --sidebar:#1e293b;--card:#1e293b;--border:#334155;
+    --text:#e2e8f0;--muted:#94a3b8;--success:#22c55e;--danger:#ef4444;--warning:#f59e0b;
+  }
+  input,select,textarea{background:#0f172a;border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;width:100%;font-size:14px;outline:none;transition:.2s}
+  input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+  button{cursor:pointer;border:none;border-radius:8px;font-size:14px;font-weight:500;transition:.2s}
+  .btn-primary{background:var(--blue);color:#fff;padding:10px 20px}
+  .btn-primary:hover{background:var(--blue-dark)}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed}
+  .btn-secondary{background:var(--border);color:var(--text);padding:10px 20px}
+  .btn-secondary:hover{background:#475569}
+  .btn-danger{background:var(--danger);color:#fff;padding:8px 16px}
+  .btn-success{background:var(--success);color:#fff;padding:8px 16px}
+  .btn-sm{padding:6px 12px;font-size:12px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .badge-pending{background:rgba(245,158,11,.15);color:var(--warning)}
+  .badge-selected{background:rgba(34,197,94,.15);color:var(--success)}
+  .badge-rejected{background:rgba(239,68,68,.15);color:var(--danger)}
+  .badge-reviewed{background:rgba(99,102,241,.15);color:#818cf8}
+  .scrollbar::-webkit-scrollbar{width:4px}
+  .scrollbar::-webkit-scrollbar-track{background:transparent}
+  .scrollbar::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+  .modal{background:#1e293b;border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+  .modal-lg{max-width:700px}
+  .toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-weight:500;z-index:2000;animation:slideUp .3s ease;max-width:360px}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .toast-success{background:#166534;color:#bbf7d0;border:1px solid #22c55e}
+  .toast-error{background:#7f1d1d;color:#fca5a5;border:1px solid #ef4444}
+  .toast-info{background:#1e3a8a;color:#bfdbfe;border:1px solid #3b82f6}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .sidebar{width:240px;background:var(--sidebar);border-right:1px solid var(--border);height:100vh;position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:100}
+  .main-content{margin-left:240px;min-height:100vh;padding:24px}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;align-items:center;gap:16px}
+  .stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:8px;color:var(--muted);cursor:pointer;transition:.2s;font-size:14px}
+  .nav-item:hover,.nav-item.active{background:rgba(37,99,235,.15);color:var(--blue-light)}
+  .nav-item.active{font-weight:600}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+  .form-group{margin-bottom:16px}
+  .search-bar{position:relative}
+  .search-bar input{padding-left:36px}
+  .search-bar i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .bell-dot{position:absolute;top:-2px;right:-2px;width:9px;height:9px;background:#ef4444;border-radius:50%;border:2px solid var(--sidebar)}
+  .notif-panel{position:absolute;top:44px;right:0;width:340px;background:#1e293b;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:500;max-height:400px;overflow-y:auto}
+  .notif-item{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px}
+  .notif-item.unread{background:rgba(37,99,235,.08)}
+
+  /* ── Mobile Responsive ────────────────────────────────────────────────── */
+  .hamburger{display:none;background:none;color:#fff;font-size:20px;padding:8px}
+  .sidebar-overlay{display:none}
+  @media (max-width: 900px){
+    .sidebar{transform:translateX(-100%);transition:transform .25s ease;box-shadow:4px 0 20px rgba(0,0,0,.4)}
+    .sidebar.open{transform:translateX(0)}
+    .main-content{margin-left:0;padding:16px}
+    .hamburger{display:inline-flex;align-items:center;justify-content:center}
+    .sidebar-overlay.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+    table{font-size:12px}
+    th,td{padding:8px 10px}
+    .modal{padding:20px;max-width:94vw}
+    .stat-card{padding:14px}
+    h1{font-size:19px !important}
+    [style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:1fr !important}
+    [style*="gridTemplateColumns: '1fr 1fr'"]{grid-template-columns:1fr !important}
+  }
+  @media (max-width: 560px){
+    .main-content{padding:12px}
+    .card{padding:14px}
+    table{display:block;overflow-x:auto;white-space:nowrap}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ═════════════════════ LOCAL "DATABASE" LAYER (localStorage) ═════════════════
+const DB_KEYS = { admins:'ar_admins', candidates:'ar_candidates', jobs:'ar_jobs', apps:'ar_applications', notifAdmin:'ar_notif_admin', notifCand:'ar_notif_cand', seq:'ar_seq' };
+
+function loadDB(key){ try{ return JSON.parse(localStorage.getItem(key)) || []; }catch{ return []; } }
+function saveDB(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+function nextId(name){
+  const seq = JSON.parse(localStorage.getItem(DB_KEYS.seq) || '{}');
+  seq[name] = (seq[name]||0) + 1;
+  localStorage.setItem(DB_KEYS.seq, JSON.stringify(seq));
+  return seq[name];
+}
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function genCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
+
+// Seed default super admin once
+async function seedAdmin(){
+  const admins = loadDB(DB_KEYS.admins);
+  if(!admins.find(a=>a.email==='kalpana150906@gmail.com')){
+    const hash = await sha256('kal@1524');
+    admins.push({ id: nextId('admin'), email:'kalpana150906@gmail.com', hash, name:'Kalpana', is_super_admin:true, created_at:new Date().toISOString() });
+    saveDB(DB_KEYS.admins, admins);
+  }
+}
+
+// ═════════════════════ SMARTER RESUME PARSER (client-side) ═══════════════════
+const SKILL_DICTIONARY = [
+  "python","java","javascript","typescript","react","react.js","vue","angular","node","node.js",
+  "fastapi","django","flask","spring boot","sql","mysql","postgresql","mongodb","redis","nosql",
+  "docker","kubernetes","aws","azure","gcp","git","github","ci/cd","jenkins","machine learning",
+  "deep learning","tensorflow","pytorch","nlp","data science","data analysis","excel","power bi",
+  "tableau","html","css","sass","c++","c#","ruby","php","swift","kotlin","scala","go","golang",
+  "hadoop","spark","kafka","elasticsearch","linux","agile","scrum","rest api","graphql","microservices",
+  "communication","leadership","teamwork","problem solving","project management","testing","selenium",
+  "jira","figma","photoshop","seo","digital marketing","salesforce","sap","android","ios","flutter",
+  "react native","next.js","express","redux","bootstrap","tailwind","webpack","devops","terraform"
+];
+
+function extractSkills(text){
+  const t = (text||'').toLowerCase();
+  const found = new Set();
+  SKILL_DICTIONARY.forEach(skill=>{
+    const esc = skill.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re = new RegExp('(^|[^a-z0-9])'+esc+'([^a-z0-9]|$)','i');
+    if(re.test(t)) found.add(skill);
+  });
+  return Array.from(found);
+}
+
+function extractExperienceYears(text){
+  const m = (text||'').match(/(\d+)\+?\s*(?:years|yrs)\s*(?:of)?\s*experience/i);
+  return m ? parseInt(m[1]) : null;
+}
+
+function extractEducation(text){
+  const t = (text||'').toLowerCase();
+  const degrees = ['phd','doctorate','master','msc','m.tech','mba','bachelor','b.tech','bsc','b.e','diploma'];
+  return degrees.filter(d=>t.includes(d));
+}
+
+function computeMatchScore(resumeText, job){
+  const resumeSkills = new Set(extractSkills(resumeText));
+  const jobSkillsSrc = (job.skills_required||'') + ' ' + (job.description||'');
+  const jobSkills = new Set(extractSkills(jobSkillsSrc));
+  let skillScore = 50;
+  if(jobSkills.size > 0){
+    let overlap = 0;
+    jobSkills.forEach(s=>{ if(resumeSkills.has(s)) overlap++; });
+    skillScore = Math.round((overlap / jobSkills.size) * 100);
+  }
+  // experience bonus/penalty
+  const reqExp = parseInt((job.experience_required||'').match(/\d+/)?.[0]) || null;
+  const candExp = extractExperienceYears(resumeText);
+  let expAdj = 0;
+  if(reqExp && candExp){
+    expAdj = candExp >= reqExp ? 5 : -10;
+  }
+  const final = Math.max(0, Math.min(100, skillScore + expAdj));
+  return { score: final, matchedSkills: Array.from(jobSkills).filter(s=>resumeSkills.has(s)), missingSkills: Array.from(jobSkills).filter(s=>!resumeSkills.has(s)), allResumeSkills: Array.from(resumeSkills), candidateExp: candExp, education: extractEducation(resumeText) };
+}
+
+async function parseResumeFile(file){
+  const ext = file.name.split('.').pop().toLowerCase();
+  try{
+    if(ext === 'pdf'){
+      const buf = await file.arrayBuffer();
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let text = '';
+      for(let i=1;i<=pdf.numPages;i++){
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(it=>it.str).join(' ') + '\n';
+      }
+      return text;
+    } else if(ext === 'docx'){
+      const buf = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      return result.value;
+    } else if(ext === 'txt'){
+      return await file.text();
+    } else {
+      return await file.text().catch(()=> '');
+    }
+  }catch(e){
+    console.error('Resume parse error', e);
+    return '';
+  }
+}
+
+function fileToDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+// ═════════════════════ NOTIFICATIONS (in-app + simulated email) ══════════════
+function pushAdminNotif(message, type='info'){
+  const list = loadDB(DB_KEYS.notifAdmin);
+  list.unshift({ id: nextId('notifA'), message, type, read:false, created_at: new Date().toISOString() });
+  saveDB(DB_KEYS.notifAdmin, list.slice(0,100));
+}
+function pushCandidateNotif(candidateId, message, type='info'){
+  const list = loadDB(DB_KEYS.notifCand);
+  list.unshift({ id: nextId('notifC'), candidate_id: candidateId, message, type, read:false, created_at: new Date().toISOString() });
+  saveDB(DB_KEYS.notifCand, list.slice(0,200));
+}
+// Simulated "email" log — shows what would be emailed (fallback if EmailJS isn't configured)
+function logSimulatedEmail(to, subject, body){
+  const list = loadDB('ar_email_log');
+  list.unshift({ to, subject, body, sent_at: new Date().toISOString(), real: false });
+  saveDB('ar_email_log', list.slice(0,200));
+}
+
+// ═════════════════════ REAL EMAIL VIA EMAILJS (browser-native, works on any device) ═════
+const EMAILJS_CONFIG_KEY = 'ar_emailjs_config'; // { publicKey, serviceId, templateId }
+function getEmailJSConfig(){ try{ return JSON.parse(localStorage.getItem(EMAILJS_CONFIG_KEY)); }catch{ return null; } }
+function saveEmailJSConfig(cfg){ localStorage.setItem(EMAILJS_CONFIG_KEY, JSON.stringify(cfg)); if(cfg.publicKey && window.emailjs){ try{ emailjs.init({ publicKey: cfg.publicKey }); }catch(e){} } }
+function isEmailJSReady(){ const c = getEmailJSConfig(); return !!(c && c.publicKey && c.serviceId && c.templateId && window.emailjs); }
+
+// Sends a real email if EmailJS is configured; otherwise falls back to the simulated log so nothing ever breaks.
+async function sendRealEmail(to, subject, message){
+  const cfg = getEmailJSConfig();
+  if(isEmailJSReady()){
+    try{
+      await emailjs.send(cfg.serviceId, cfg.templateId, { to_email: to, subject, message });
+      const list = loadDB('ar_email_log');
+      list.unshift({ to, subject, body: message, sent_at: new Date().toISOString(), real: true });
+      saveDB('ar_email_log', list.slice(0,200));
+      return true;
+    }catch(e){
+      console.error('EmailJS send failed, falling back to log:', e);
+      logSimulatedEmail(to, subject, message + ' (EmailJS send failed: ' + (e?.text||e?.message||'unknown error') + ')');
+      return false;
+    }
+  }
+  logSimulatedEmail(to, subject, message);
+  return false;
+}
+
+// ═════════════════════ Toast ═════════════════════════════════════════════════
+function Toast({ message, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, []);
+  return <div className={`toast toast-${type}`}>{message}</div>;
+}
+
+// ═════════════════════ Auth Hook ══════════════════════════════════════════════
+function useAuth() {
+  const [user, setUser] = useState(() => { try{ return JSON.parse(localStorage.getItem('ar_user')); }catch{ return null; } });
+  const [role, setRole] = useState(() => localStorage.getItem('ar_role') || null);
+  const login = (userData, userRole) => {
+    setUser(userData); setRole(userRole);
+    localStorage.setItem('ar_user', JSON.stringify(userData));
+    localStorage.setItem('ar_role', userRole);
+  };
+  const logout = () => {
+    setUser(null); setRole(null);
+    localStorage.removeItem('ar_user'); localStorage.removeItem('ar_role');
+  };
+  return { user, role, login, logout };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOGIN PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+function LoginPage({ onLogin, showToast }) {
+  const [portalMode, setPortalMode] = useState('candidate');
+  const [authMode, setAuthMode] = useState('login');
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const [pendingVerify, setPendingVerify] = useState(null); // {email, code}
+  const [codeInput, setCodeInput] = useState('');
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleAdminLogin = async () => {
+    if(!form.email || !form.password){ showToast('Enter email & password', 'error'); return; }
+    setLoading(true);
+    try{
+      const admins = loadDB(DB_KEYS.admins);
+      const admin = admins.find(a=>a.email.toLowerCase() === form.email.toLowerCase().trim());
+      const hash = await sha256(form.password);
+      if(!admin || admin.hash !== hash){ throw new Error('Invalid admin credentials'); }
+      onLogin({ token:'admin-'+admin.id, id:admin.id, name:admin.name, email:admin.email, is_super_admin:admin.is_super_admin }, 'admin');
+      showToast('Welcome, ' + admin.name + '!', 'success');
+    }catch(e){ showToast(e.message, 'error'); }
+    setLoading(false);
+  };
+
+  const handleCandidateLogin = async () => {
+    if(!form.email || !form.password){ showToast('Enter email & password', 'error'); return; }
+    setLoading(true);
+    try{
+      const cands = loadDB(DB_KEYS.candidates);
+      const c = cands.find(x=>x.email.toLowerCase() === form.email.toLowerCase().trim());
+      if(!c) throw new Error('No account found with this email');
+      const hash = await sha256(form.password);
+      if(c.hash !== hash) throw new Error('Incorrect password');
+      if(!c.verified){
+        setPendingVerify({ email: c.email, code: c.verifyCode });
+        sendRealEmail(c.email, 'Verify your email', `Your verification code is ${c.verifyCode}`);
+        showToast('Please verify your email first. A code has been "sent" — check the verification box.', 'info');
+        setLoading(false);
+        return;
+      }
+      onLogin({ token:'cand-'+c.id, id:c.id, name:c.name, email:c.email }, 'candidate');
+      showToast('Welcome back, ' + c.name + '!', 'success');
+    }catch(e){ showToast(e.message, 'error'); }
+    setLoading(false);
+  };
+
+  const handleCandidateSignup = async () => {
+    if (!form.name || !form.email || !form.password) { showToast('All fields required', 'error'); return; }
+    if (form.password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+    setLoading(true);
+    try{
+      const cands = loadDB(DB_KEYS.candidates);
+      if(cands.find(x=>x.email.toLowerCase() === form.email.toLowerCase().trim())){
+        throw new Error('Email already registered. Please sign in.');
+      }
+      const hash = await sha256(form.password);
+      const code = genCode();
+      const newCand = { id: nextId('cand'), name: form.name, email: form.email.trim(), hash, auth_provider:'email', verified:false, verifyCode: code, created_at:new Date().toISOString() };
+      cands.push(newCand);
+      saveDB(DB_KEYS.candidates, cands);
+      sendRealEmail(newCand.email, 'Verify your AI Recruiter Pro account', `Your verification code is ${code}`);
+      setPendingVerify({ email: newCand.email, code });
+      showToast('Account created! Enter the verification code sent to your email.', 'success');
+    }catch(e){ showToast(e.message, 'error'); }
+    setLoading(false);
+  };
+
+  const handleVerifyCode = () => {
+    if(!pendingVerify) return;
+    if(codeInput.trim() !== pendingVerify.code){ showToast('Incorrect code. Please try again.', 'error'); return; }
+    const cands = loadDB(DB_KEYS.candidates);
+    const idx = cands.findIndex(c=>c.email === pendingVerify.email);
+    if(idx>-1){
+      cands[idx].verified = true;
+      saveDB(DB_KEYS.candidates, cands);
+      showToast('Email verified! You can now sign in.', 'success');
+      onLogin({ token:'cand-'+cands[idx].id, id:cands[idx].id, name:cands[idx].name, email:cands[idx].email }, 'candidate');
+    }
+    setPendingVerify(null); setCodeInput('');
+  };
+
+  const handleGoogleLogin = async () => {
+    const email = prompt('Simulated Google Sign-In\n\nEnter the Gmail address to continue with:');
+    if(!email) return;
+    if(!/^[^\s@]+@(gmail\.com)$/i.test(email.trim())){ showToast('Please enter a valid @gmail.com address', 'error'); return; }
+    setLoading(true);
+    try{
+      const cands = loadDB(DB_KEYS.candidates);
+      let c = cands.find(x=>x.email.toLowerCase() === email.toLowerCase().trim());
+      if(!c){
+        c = { id: nextId('cand'), name: email.split('@')[0], email: email.trim(), hash:null, auth_provider:'google', verified:true, created_at:new Date().toISOString() };
+        cands.push(c);
+        saveDB(DB_KEYS.candidates, cands);
+      }
+      onLogin({ token:'cand-'+c.id, id:c.id, name:c.name, email:c.email }, 'candidate');
+      showToast('Signed in with Google as ' + c.email, 'success');
+    }catch(e){ showToast(e.message, 'error'); }
+    setLoading(false);
+  };
+
+  if(pendingVerify){
+    return (
+      <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', padding:20 }}>
+        <div className="card" style={{ maxWidth:420, width:'100%', textAlign:'center' }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>📧</div>
+          <h2 style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>Verify Your Email</h2>
+          <p style={{ color:'var(--muted)', fontSize:14, marginBottom:6 }}>We "sent" a 6-digit code to <b>{pendingVerify.email}</b></p>
+          <div style={{ background:'#0f172a', border:'1px dashed var(--blue)', borderRadius:8, padding:12, margin:'14px 0', fontSize:13, color:'var(--blue-light)' }}>
+            Demo mode (no real SMTP configured): your code is <b style={{ fontSize:18, letterSpacing:2 }}>{pendingVerify.code}</b>
+          </div>
+          <div className="form-group">
+            <input placeholder="Enter 6-digit code" value={codeInput} onChange={e=>setCodeInput(e.target.value)} maxLength={6} style={{ textAlign:'center', fontSize:20, letterSpacing:4 }} onKeyDown={e=>e.key==='Enter' && handleVerifyCode()} />
+          </div>
+          <button className="btn-primary" style={{ width:'100%' }} onClick={handleVerifyCode}>Verify & Continue</button>
+          <button className="btn-secondary" style={{ width:'100%', marginTop:10 }} onClick={()=>setPendingVerify(null)}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', padding: 20 }}>
+      <div style={{ width: '100%', maxWidth: 440 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 48, height: 48, background: 'var(--blue)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🤖</div>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>AI Recruiter Pro</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Smart Hiring Platform</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: 32 }}>
+          <div style={{ display: 'flex', background: '#0f172a', borderRadius: 10, padding: 4, marginBottom: 28, border: '1px solid var(--border)' }}>
+            <button onClick={() => { setPortalMode('candidate'); setAuthMode('login'); }}
+              style={{ flex: 1, padding: '10px', borderRadius: 8, fontWeight: 600, fontSize: 13, background: portalMode === 'candidate' ? 'var(--blue)' : 'transparent', color: portalMode === 'candidate' ? '#fff' : 'var(--muted)' }}>
+              👤 Candidate
+            </button>
+            <button onClick={() => { setPortalMode('admin'); setAuthMode('login'); }}
+              style={{ flex: 1, padding: '10px', borderRadius: 8, fontWeight: 600, fontSize: 13, background: portalMode === 'admin' ? 'var(--blue)' : 'transparent', color: portalMode === 'admin' ? '#fff' : 'var(--muted)' }}>
+              🛡️ Admin Portal
+            </button>
+          </div>
+
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>
+            {portalMode === 'admin' ? 'Admin Sign In' : authMode === 'login' ? 'Welcome Back' : 'Create Account'}
+          </h2>
+          <p style={{ color: 'var(--muted)', fontSize: 14, marginBottom: 24 }}>
+            {portalMode === 'admin' ? 'Restricted access for authorized admins only' : authMode === 'login' ? 'Sign in to track your applications' : 'Join and start applying for jobs'}
+          </p>
+
+          {portalMode === 'candidate' && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <button onClick={() => setAuthMode('login')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontWeight: 600, fontSize: 13, background: authMode === 'login' ? 'rgba(37,99,235,.2)' : 'transparent', color: authMode === 'login' ? 'var(--blue-light)' : 'var(--muted)', border: authMode === 'login' ? '1px solid var(--blue)' : '1px solid transparent' }}>Sign In</button>
+              <button onClick={() => setAuthMode('signup')} style={{ flex: 1, padding: '8px', borderRadius: 8, fontWeight: 600, fontSize: 13, background: authMode === 'signup' ? 'rgba(37,99,235,.2)' : 'transparent', color: authMode === 'signup' ? 'var(--blue-light)' : 'var(--muted)', border: authMode === 'signup' ? '1px solid var(--blue)' : '1px solid transparent' }}>Sign Up</button>
+            </div>
+          )}
+
+          {portalMode === 'candidate' && authMode === 'signup' && (
+            <div className="form-group">
+              <label>Full Name</label>
+              <input placeholder="John Doe" value={form.name} onChange={e => set('name', e.target.value)} />
+            </div>
+          )}
+
+          <div className="form-group">
+            <label>Email Address</label>
+            <input type="email" placeholder="you@example.com" value={form.email} onChange={e => set('email', e.target.value)} />
+          </div>
+
+          <div className="form-group">
+            <label>Password</label>
+            <input type="password" placeholder="••••••••" value={form.password} onChange={e => set('password', e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (portalMode === 'admin' ? handleAdminLogin() : authMode === 'login' ? handleCandidateLogin() : handleCandidateSignup())} />
+          </div>
+
+          <button className="btn-primary" style={{ width: '100%', padding: 12, fontSize: 15 }} disabled={loading}
+            onClick={portalMode === 'admin' ? handleAdminLogin : authMode === 'login' ? handleCandidateLogin : handleCandidateSignup}>
+            {loading ? '⏳ Please wait...' : portalMode === 'admin' ? 'Sign In to Admin Portal' : authMode === 'login' ? 'Sign In' : 'Create Account'}
+          </button>
+
+          {portalMode === 'candidate' && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                <span style={{ color: 'var(--muted)', fontSize: 13 }}>or</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              </div>
+              <button onClick={handleGoogleLogin} disabled={loading}
+                style={{ width: '100%', padding: 12, background: '#fff', color: '#1a1a1a', borderRadius: 8, fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, border: '1px solid #e5e7eb' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Continue with Google
+              </button>
+              <div style={{ fontSize:11, color:'var(--muted)', textAlign:'center', marginTop:8 }}>Demo mode: enter any @gmail.com address to simulate Google sign-in.</div>
+            </>
+          )}
+
+          {portalMode === 'admin' && (
+            <div style={{ marginTop: 16, padding: 12, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 8, fontSize: 13, color: '#fca5a5' }}>
+              🔒 Admin access is restricted. Default super admin: kalpana150906@gmail.com
+            </div>
+          )}
+        </div>
+        <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 12, marginTop: 20 }}>AI Recruiter Pro © 2024 · Powered by AI</p>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════ Notification Bell (shared) ═══════════════
+function NotifBell({ notifications, onMarkRead, onMarkAllRead }){
+  const [open, setOpen] = useState(false);
+  const unread = notifications.filter(n=>!n.read).length;
+  return (
+    <div style={{ position:'relative' }}>
+      <button className="btn-secondary" style={{ position:'relative', padding:'10px 14px' }} onClick={()=>setOpen(o=>!o)}>
+        <i className="fas fa-bell" />{unread>0 && <span className="bell-dot" />}
+      </button>
+      {open && (
+        <div className="notif-panel scrollbar">
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', borderBottom:'1px solid var(--border)' }}>
+            <b style={{ fontSize:13 }}>Notifications</b>
+            <button className="btn-secondary btn-sm" onClick={onMarkAllRead}>Mark all read</button>
+          </div>
+          {notifications.length===0 && <div style={{ padding:20, textAlign:'center', color:'var(--muted)', fontSize:13 }}>No notifications</div>}
+          {notifications.slice(0,20).map(n=>(
+            <div key={n.id} className={`notif-item ${!n.read?'unread':''}`} onClick={()=>onMarkRead(n.id)} style={{cursor:'pointer'}}>
+              <div>{n.message}</div>
+              <div style={{ color:'var(--muted)', fontSize:11, marginTop:4 }}>{new Date(n.created_at).toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CANDIDATE PORTAL
+// ═══════════════════════════════════════════════════════════════════════════════
+function CandidatePortal({ user, onLogout, showToast }) {
+  const [page, setPage] = useState('dashboard');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [applyModal, setApplyModal] = useState(null);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [search, setSearch] = useState('');
+  const [notifs, setNotifs] = useState([]);
+
+  const refresh = () => {
+    setJobs(loadDB(DB_KEYS.jobs).filter(j=>j.is_active));
+    setApplications(loadDB(DB_KEYS.apps).filter(a=>a.candidate_id===user.id).sort((a,b)=>new Date(b.applied_at)-new Date(a.applied_at)));
+    setNotifs(loadDB(DB_KEYS.notifCand).filter(n=>n.candidate_id===user.id));
+  };
+  useEffect(()=>{ refresh(); }, []);
+
+  const handleApply = async () => {
+    if (!resumeFile) { showToast('Please upload your resume', 'error'); return; }
+    setLoading(true); setParsing(true);
+    try{
+      const text = await parseResumeFile(resumeFile);
+      const dataUrl = await fileToDataURL(resumeFile);
+      const job = applyModal;
+      const analysis = computeMatchScore(text, job);
+      const apps = loadDB(DB_KEYS.apps);
+      if(apps.find(a=>a.candidate_id===user.id && a.job_id===job.id)){ throw new Error('Already applied for this job'); }
+      const newApp = {
+        id: nextId('app'), candidate_id:user.id, job_id: job.id,
+        resume_filename: resumeFile.name, resume_text:text, resume_dataurl:dataUrl,
+        status:'pending', match_score:analysis.score, matched_skills:analysis.matchedSkills,
+        missing_skills:analysis.missingSkills, candidate_exp:analysis.candidateExp, education:analysis.education,
+        notes:'', applied_at:new Date().toISOString(), updated_at:new Date().toISOString()
+      };
+      apps.push(newApp);
+      saveDB(DB_KEYS.apps, apps);
+      pushAdminNotif(`New application: ${user.name} applied for "${job.title}" (Match: ${analysis.score}%)`, 'new_application');
+      sendRealEmail('kalpana150906@gmail.com', `New Application: ${job.title}`, `${user.name} (${user.email}) applied for ${job.title}. Match score: ${analysis.score}%`);
+      showToast(`Applied successfully! Match Score: ${analysis.score}%`, 'success');
+      setApplyModal(null); setResumeFile(null);
+      refresh();
+    }catch(e){ showToast(e.message, 'error'); }
+    setParsing(false); setLoading(false);
+  };
+
+  const markRead = (id) => {
+    const list = loadDB(DB_KEYS.notifCand);
+    const idx = list.findIndex(n=>n.id===id); if(idx>-1){ list[idx].read=true; saveDB(DB_KEYS.notifCand, list); setNotifs(list.filter(n=>n.candidate_id===user.id)); }
+  };
+  const markAllRead = () => {
+    const list = loadDB(DB_KEYS.notifCand).map(n=> n.candidate_id===user.id ? {...n, read:true} : n);
+    saveDB(DB_KEYS.notifCand, list); setNotifs(list.filter(n=>n.candidate_id===user.id));
+  };
+
+  const filteredJobs = jobs.filter(j =>
+    j.title.toLowerCase().includes(search.toLowerCase()) ||
+    (j.department || '').toLowerCase().includes(search.toLowerCase()) ||
+    (j.location || '').toLowerCase().includes(search.toLowerCase())
+  );
+  const appliedJobIds = new Set(applications.map(a => a.job_id));
+  const statusIcon = s => ({ pending: '⏳', reviewed: '👀', selected: '✅', rejected: '❌' }[s] || '•');
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <div className={`sidebar-overlay ${mobileNavOpen ? 'open' : ''}`} onClick={()=>setMobileNavOpen(false)} />
+      <div className={`sidebar scrollbar ${mobileNavOpen ? 'open' : ''}`} style={{ overflowY: 'auto' }}>
+        <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, background: 'var(--blue)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🤖</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>AI Recruiter</div>
+              <div style={{ fontSize: 11, color: '#22c55e' }}>● Candidate</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: '16px 12px', flex: 1 }}>
+          {[{ id: 'dashboard', icon: 'fa-home', label: 'Dashboard' }, { id: 'jobs', icon: 'fa-briefcase', label: 'Browse Jobs' }, { id: 'applications', icon: 'fa-file-alt', label: 'My Applications' }].map(item => (
+            <div key={item.id} className={`nav-item ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setMobileNavOpen(false); }}>
+              <i className={`fas ${item.icon}`} style={{ width: 18, textAlign: 'center' }} />{item.label}
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: '16px 12px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px' }}>
+            <div style={{ width: 36, height: 36, background: 'rgba(37,99,235,.3)', borderRadius: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--blue-light)' }}>{user.name?.charAt(0)?.toUpperCase()}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+            </div>
+          </div>
+          <button onClick={onLogout} className="btn-secondary" style={{ width: '100%', marginTop: 8 }}>Sign Out</button>
+        </div>
+      </div>
+
+      <div className="main-content scrollbar" style={{ overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <button className="hamburger" onClick={()=>setMobileNavOpen(true)}><i className="fas fa-bars" /></button>
+            <div>
+              <h1 style={{ fontSize: 24, fontWeight: 700 }}>{page === 'dashboard' ? `Hello, ${user.name?.split(' ')[0]}! 👋` : page === 'jobs' ? 'Browse Jobs' : 'My Applications'}</h1>
+              <p style={{ color: 'var(--muted)', fontSize: 14 }}>{page === 'dashboard' ? 'Track your job search progress' : page === 'jobs' ? 'Find your perfect role' : 'Monitor your application status'}</p>
+            </div>
+          </div>
+          <NotifBell notifications={notifs} onMarkRead={markRead} onMarkAllRead={markAllRead} />
+        </div>
+
+        {page === 'dashboard' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16, marginBottom: 28 }}>
+              {[
+                { label: 'Total Applied', value: applications.length, icon: '📋', color: '#2563EB' },
+                { label: 'Selected', value: applications.filter(a => a.status === 'selected').length, icon: '✅', color: '#22c55e' },
+                { label: 'Pending', value: applications.filter(a => a.status === 'pending').length, icon: '⏳', color: '#f59e0b' },
+                { label: 'Rejected', value: applications.filter(a => a.status === 'rejected').length, icon: '❌', color: '#ef4444' },
+              ].map((s, i) => (
+                <div key={i} className="stat-card">
+                  <div className="stat-icon" style={{ background: s.color + '20' }}><span style={{ fontSize: 22 }}>{s.icon}</span></div>
+                  <div><div style={{ fontSize: 26, fontWeight: 700, color: s.color }}>{s.value}</div><div style={{ fontSize: 13, color: 'var(--muted)' }}>{s.label}</div></div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div className="card">
+                <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Recent Applications</h3>
+                {applications.slice(0, 5).length === 0 ? <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '20px 0', fontSize: 14 }}>No applications yet. Start applying!</div> :
+                  applications.slice(0, 5).map(a => (
+                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                      <div><div style={{ fontSize: 14, fontWeight: 600 }}>{jobs.find(j=>j.id===a.job_id)?.title || 'Job'}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{new Date(a.applied_at).toLocaleDateString()}</div></div>
+                      <span className={`badge badge-${a.status}`}>{statusIcon(a.status)} {a.status}</span>
+                    </div>
+                  ))}
+              </div>
+              <div className="card">
+                <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Available Jobs</h3>
+                {jobs.slice(0, 5).map(j => (
+                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                    <div><div style={{ fontSize: 14, fontWeight: 600 }}>{j.title}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{j.location || 'Remote'} • {j.job_type}</div></div>
+                    {appliedJobIds.has(j.id) ? <span style={{ fontSize: 12, color: '#22c55e' }}>✓ Applied</span> : <button className="btn-primary btn-sm" onClick={() => setApplyModal(j)}>Apply</button>}
+                  </div>
+                ))}
+                {jobs.length === 0 && <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '20px 0', fontSize: 14 }}>No jobs posted yet.</div>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {page === 'jobs' && (
+          <div>
+            <div className="search-bar" style={{ marginBottom: 20, maxWidth: 400 }}>
+              <i className="fas fa-search" /><input placeholder="Search jobs..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
+              {filteredJobs.map(job => (
+                <div key={job.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: 17, fontWeight: 700 }}>{job.title}</div>
+                      <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+                        {job.department && <span>🏢 {job.department} &nbsp;</span>}{job.location && <span>📍 {job.location} &nbsp;</span>}<span>💼 {job.job_type}</span>
+                      </div>
+                    </div>
+                    <span className="badge" style={{ background: 'rgba(37,99,235,.15)', color: 'var(--blue-light)', whiteSpace: 'nowrap' }}>{job.job_type}</span>
+                  </div>
+                  <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{job.description}</p>
+                  {job.skills_required && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {job.skills_required.split(',').slice(0, 4).map((s, i) => <span key={i} style={{ fontSize: 11, padding: '3px 8px', background: 'rgba(99,102,241,.15)', color: '#818cf8', borderRadius: 20 }}>{s.trim()}</span>)}
+                    </div>
+                  )}
+                  <div style={{ marginTop: 'auto' }}>
+                    {appliedJobIds.has(job.id) ? <button className="btn-success" style={{ width: '100%' }} disabled>✓ Already Applied</button> : <button className="btn-primary" style={{ width: '100%' }} onClick={() => setApplyModal(job)}>Apply Now</button>}
+                  </div>
+                </div>
+              ))}
+              {filteredJobs.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px 0', color: 'var(--muted)' }}><div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div><div>No jobs found</div></div>}
+            </div>
+          </div>
+        )}
+
+        {page === 'applications' && (
+          <div>
+            {applications.length === 0 ? (
+              <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{ fontSize: 50, marginBottom: 16 }}>📋</div>
+                <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No Applications Yet</div>
+                <div style={{ color: 'var(--muted)', marginBottom: 20 }}>Browse available jobs and submit your first application</div>
+                <button className="btn-primary" onClick={() => setPage('jobs')}>Browse Jobs</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {applications.map(app => {
+                  const job = jobs.find(j=>j.id===app.job_id) || loadDB(DB_KEYS.jobs).find(j=>j.id===app.job_id);
+                  return (
+                  <div key={app.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ width: 50, height: 50, borderRadius: 12, background: 'rgba(37,99,235,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>💼</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700 }}>{job?.title || 'Job'}</div>
+                      <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{job?.department && <span>🏢 {job.department} &nbsp;|&nbsp; </span>}Applied: {new Date(app.applied_at).toLocaleDateString()}</div>
+                      {app.notes && <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6, fontStyle: 'italic' }}>Admin note: {app.notes}</div>}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      {app.match_score != null && <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>Match: <span style={{ color: app.match_score >= 60 ? '#22c55e' : '#f59e0b', fontWeight: 700 }}>{app.match_score}%</span></div>}
+                      <span className={`badge badge-${app.status}`} style={{ fontSize: 13 }}>{statusIcon(app.status)} {app.status.charAt(0).toUpperCase() + app.status.slice(1)}</span>
+                    </div>
+                  </div>
+                )})}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {applyModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && !loading && setApplyModal(null)}>
+          <div className="modal">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div><h2 style={{ fontSize: 18, fontWeight: 700 }}>Apply for Position</h2><p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 4 }}>{applyModal.title}</p></div>
+              <button onClick={() => !loading && setApplyModal(null)} style={{ background: 'none', color: 'var(--muted)', fontSize: 20 }}>×</button>
+            </div>
+            <div style={{ background: '#0f172a', borderRadius: 8, padding: 16, marginBottom: 20, fontSize: 13, color: 'var(--muted)', maxHeight: 150, overflowY: 'auto' }}>{applyModal.description}</div>
+            <div className="form-group">
+              <label>Upload Resume * (PDF, DOCX, or TXT — real text will be extracted & analyzed)</label>
+              <div style={{ border: '2px dashed var(--border)', borderRadius: 10, padding: 24, textAlign: 'center', cursor: 'pointer' }}
+                onClick={() => document.getElementById('resume-input').click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); setResumeFile(e.dataTransfer.files[0]); }}>
+                <input id="resume-input" type="file" accept=".pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={e => setResumeFile(e.target.files[0])} />
+                {resumeFile ? (
+                  <div><div style={{ fontSize: 24, marginBottom: 8 }}>📄</div><div style={{ color: '#22c55e', fontWeight: 600 }}>{resumeFile.name}</div><div style={{ color: 'var(--muted)', fontSize: 12 }}>{(resumeFile.size / 1024).toFixed(1)} KB</div></div>
+                ) : (
+                  <div><div style={{ fontSize: 32, marginBottom: 8 }}>📁</div><div style={{ fontWeight: 600, marginBottom: 4 }}>Click or drag to upload resume</div><div style={{ color: 'var(--muted)', fontSize: 12 }}>PDF, DOC, DOCX, TXT supported</div></div>
+                )}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <button className="btn-secondary" style={{ flex: 1 }} disabled={loading} onClick={() => { setApplyModal(null); setResumeFile(null); }}>Cancel</button>
+              <button className="btn-primary" style={{ flex: 1 }} disabled={loading} onClick={handleApply}>{parsing ? '🔍 Analyzing resume...' : loading ? '⏳ Submitting...' : '🚀 Submit Application'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN PORTAL
+// ═══════════════════════════════════════════════════════════════════════════════
+function AdminPortal({ user, onLogout, showToast }) {
+  const [page, setPage] = useState('dashboard');
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [admins, setAdmins] = useState([]);
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [jobForm, setJobForm] = useState({ title: '', description: '', department: '', location: '', job_type: 'Full-time', skills_required: '', experience_required: '' });
+  const [adminForm, setAdminForm] = useState({ name: '', email: '', password: '' });
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [detailApp, setDetailApp] = useState(null);
+  const [emailCfg, setEmailCfg] = useState(() => getEmailJSConfig() || { publicKey:'', serviceId:'', templateId:'' });
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [subPage, setSubPage] = useState(null);
+  const [notifs, setNotifs] = useState([]);
+  const chartRef = useRef(null);
+  const chartInstance = useRef(null);
+
+  const refresh = () => {
+    setJobs(loadDB(DB_KEYS.jobs).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)));
+    setApplications(loadDB(DB_KEYS.apps).sort((a,b)=>new Date(b.applied_at)-new Date(a.applied_at)));
+    setCandidates(loadDB(DB_KEYS.candidates));
+    setAdmins(loadDB(DB_KEYS.admins));
+    setNotifs(loadDB(DB_KEYS.notifAdmin));
+  };
+  useEffect(()=>{ refresh(); }, []);
+
+  const stats = {
+    total_candidates: candidates.length,
+    total_jobs: jobs.filter(j=>j.is_active).length,
+    total_applications: applications.length,
+    selected: applications.filter(a=>a.status==='selected').length,
+    rejected: applications.filter(a=>a.status==='rejected').length,
+    pending: applications.filter(a=>a.status==='pending').length,
+    avg_match_score: applications.length ? Math.round(applications.reduce((s,a)=>s+(a.match_score||0),0)/applications.length) : 0
+  };
+
+  useEffect(() => {
+    if (page === 'analytics' && chartRef.current) {
+      if (chartInstance.current) chartInstance.current.destroy();
+      const ctx = chartRef.current.getContext('2d');
+      chartInstance.current = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: ['Selected', 'Pending', 'Rejected', 'Reviewed'], datasets: [{ data: [stats.selected, stats.pending, stats.rejected, applications.filter(a=>a.status==='reviewed').length], backgroundColor: ['#22c55e','#f59e0b','#ef4444','#818cf8'], borderWidth: 0 }] },
+        options: { plugins: { legend: { labels: { color: '#e2e8f0' } } }, cutout: '65%' }
+      });
+    }
+  }, [page, applications]);
+
+  const handleCreateJob = () => {
+    if (!jobForm.title || !jobForm.description) { showToast('Title & description required', 'error'); return; }
+    const list = loadDB(DB_KEYS.jobs);
+    list.push({ id: nextId('job'), ...jobForm, is_active:true, created_at:new Date().toISOString(), created_by:user.id });
+    saveDB(DB_KEYS.jobs, list);
+    showToast('Job posted successfully!', 'success');
+    setShowJobModal(false);
+    setJobForm({ title: '', description: '', department: '', location: '', job_type: 'Full-time', skills_required: '', experience_required: '' });
+    refresh();
+  };
+
+  const handleAddAdmin = async () => {
+    if (!adminForm.name || !adminForm.email || !adminForm.password) { showToast('All fields required', 'error'); return; }
+    const list = loadDB(DB_KEYS.admins);
+    if(list.find(a=>a.email.toLowerCase()===adminForm.email.toLowerCase())){ showToast('Admin already exists', 'error'); return; }
+    const hash = await sha256(adminForm.password);
+    list.push({ id: nextId('admin'), name:adminForm.name, email:adminForm.email.trim(), hash, is_super_admin:false, created_at:new Date().toISOString(), created_by:user.id });
+    saveDB(DB_KEYS.admins, list);
+    showToast('Admin added successfully!', 'success');
+    setShowAdminModal(false);
+    setAdminForm({ name: '', email: '', password: '' });
+    refresh();
+  };
+
+  const handleUpdateStatus = (appId, status, notes = '') => {
+    const list = loadDB(DB_KEYS.apps);
+    const idx = list.findIndex(a=>a.id===appId);
+    if(idx>-1){
+      list[idx].status = status; list[idx].notes = notes; list[idx].updated_at = new Date().toISOString();
+      saveDB(DB_KEYS.apps, list);
+      const app = list[idx];
+      const cand = loadDB(DB_KEYS.candidates).find(c=>c.id===app.candidate_id);
+      const job = loadDB(DB_KEYS.jobs).find(j=>j.id===app.job_id);
+      const statusLabel = { selected:'been SELECTED for', rejected:'been REJECTED for', reviewed:'moved to the next round for', pending:'set to pending for' }[status] || 'updated for';
+      const msg = `Your application has ${statusLabel} "${job?.title || 'a job'}"`;
+      pushCandidateNotif(app.candidate_id, msg, status);
+      if(cand) sendRealEmail(cand.email, `Application Update: ${job?.title || ''}`, msg + (notes ? `\nNote: ${notes}` : ''));
+      showToast('Status updated & candidate notified', 'success');
+      refresh();
+      if (detailApp) setDetailApp(a => ({ ...a, status, notes }));
+    }
+  };
+
+  const handleDeactivateJob = (jobId) => {
+    if (!confirm('Deactivate this job posting?')) return;
+    const list = loadDB(DB_KEYS.jobs);
+    const idx = list.findIndex(j=>j.id===jobId);
+    if(idx>-1){ list[idx].is_active=false; saveDB(DB_KEYS.jobs, list); showToast('Job deactivated', 'success'); refresh(); }
+  };
+
+  const markRead = (id) => { const list = loadDB(DB_KEYS.notifAdmin); const idx=list.findIndex(n=>n.id===id); if(idx>-1){ list[idx].read=true; saveDB(DB_KEYS.notifAdmin,list); setNotifs(list); } };
+  const markAllRead = () => { const list = loadDB(DB_KEYS.notifAdmin).map(n=>({...n,read:true})); saveDB(DB_KEYS.notifAdmin,list); setNotifs(list); };
+
+  const getCand = (id) => candidates.find(c=>c.id===id) || {};
+  const getJob = (id) => jobs.find(j=>j.id===id) || {};
+
+  const enrichedApps = applications.map(a=>({ ...a, candidate_name:getCand(a.candidate_id).name||'Unknown', candidate_email:getCand(a.candidate_id).email||'', job_title:getJob(a.job_id).title||'Unknown' }));
+  const filteredApps = enrichedApps.filter(a => {
+    const matchSearch = a.candidate_name.toLowerCase().includes(search.toLowerCase()) || a.job_title.toLowerCase().includes(search.toLowerCase()) || a.candidate_email.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === 'all' || a.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const navItems = [
+    { id: 'dashboard', icon: 'fa-home', label: 'Dashboard' },
+    { id: 'candidates', icon: 'fa-users', label: 'Candidates' },
+    { id: 'jobs', icon: 'fa-briefcase', label: 'Jobs' },
+    { id: 'ranking', icon: 'fa-trophy', label: 'Rankings' },
+    { id: 'skillgap', icon: 'fa-chart-bar', label: 'Skill Gap' },
+    { id: 'interview', icon: 'fa-comments', label: 'Interview Prep' },
+    { id: 'analytics', icon: 'fa-chart-pie', label: 'Analytics' },
+    { id: 'admins', icon: 'fa-shield-alt', label: 'Admin Management' },
+    { id: 'emaillog', icon: 'fa-envelope', label: 'Email Log' },
+  ];
+
+  const downloadResume = (app) => {
+    if(!app.resume_dataurl){ showToast('No resume file stored', 'error'); return; }
+    const a = document.createElement('a');
+    a.href = app.resume_dataurl; a.download = app.resume_filename || 'resume';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+
+  const emailLog = loadDB('ar_email_log');
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <div className={`sidebar-overlay ${mobileNavOpen ? 'open' : ''}`} onClick={()=>setMobileNavOpen(false)} />
+      <div className={`sidebar scrollbar ${mobileNavOpen ? 'open' : ''}`} style={{ overflowY: 'auto' }}>
+        <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, background: 'var(--blue)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🤖</div>
+            <div><div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>AI Recruiter Pro</div><div style={{ fontSize: 11, color: '#f59e0b' }}>🛡️ Admin Portal</div></div>
+          </div>
+        </div>
+        <div style={{ padding: '16px 12px', flex: 1 }}>
+          {navItems.map(item => (
+            <div key={item.id} className={`nav-item ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setDetailApp(null); setSubPage(null); setMobileNavOpen(false); }}>
+              <i className={`fas ${item.icon}`} style={{ width: 18, textAlign: 'center' }} />{item.label}
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: '16px 12px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px' }}>
+            <div style={{ width: 36, height: 36, background: 'rgba(245,158,11,.2)', borderRadius: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#f59e0b' }}>{user.name?.charAt(0)?.toUpperCase()}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
+              <div style={{ fontSize: 10, color: '#f59e0b' }}>{user.is_super_admin ? '⭐ Super Admin' : 'Admin'}</div>
+            </div>
+          </div>
+          <button onClick={onLogout} className="btn-secondary" style={{ width: '100%', marginTop: 8 }}>Sign Out</button>
+        </div>
+      </div>
+
+      <div className="main-content scrollbar" style={{ overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap:'wrap', gap:12 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <button className="hamburger" onClick={()=>setMobileNavOpen(true)}><i className="fas fa-bars" /></button>
+            <div><h1 style={{ fontSize: 24, fontWeight: 700 }}>{navItems.find(n=>n.id===page)?.label || 'Dashboard'}</h1><p style={{ color: 'var(--muted)', fontSize: 14 }}>AI Recruiter Pro Admin Panel</p></div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems:'center' }}>
+            {page === 'jobs' && <button className="btn-primary" onClick={() => setShowJobModal(true)}>+ Post Job</button>}
+            {page === 'admins' && user.is_super_admin && <button className="btn-primary" onClick={() => setShowAdminModal(true)}>+ Add Admin</button>}
+            <NotifBell notifications={notifs} onMarkRead={markRead} onMarkAllRead={markAllRead} />
+          </div>
+        </div>
+
+        {page === 'dashboard' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 16, marginBottom: 28 }}>
+              {[
+                { label: 'Total Candidates', value: stats.total_candidates, icon: '👤', color: '#2563EB' },
+                { label: 'Active Jobs', value: stats.total_jobs, icon: '💼', color: '#8b5cf6' },
+                { label: 'Applications', value: stats.total_applications, icon: '📋', color: '#0891b2' },
+                { label: 'Selected', value: stats.selected, icon: '✅', color: '#22c55e' },
+                { label: 'Rejected', value: stats.rejected, icon: '❌', color: '#ef4444' },
+                { label: 'Avg Match Score', value: `${stats.avg_match_score}%`, icon: '🎯', color: '#f59e0b' },
+              ].map((s, i) => (
+                <div key={i} className="stat-card">
+                  <div className="stat-icon" style={{ background: s.color + '20' }}><span style={{ fontSize: 20 }}>{s.icon}</span></div>
+                  <div><div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.value}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.label}</div></div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}><h3 style={{ fontSize: 16, fontWeight: 600 }}>Recent Applications</h3><button className="btn-secondary btn-sm" onClick={() => setPage('candidates')}>View All</button></div>
+                {enrichedApps.slice(0, 6).map(a => (
+                  <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                    <div><div style={{ fontSize: 14, fontWeight: 600 }}>{a.candidate_name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{a.job_title}</div></div>
+                    <span className={`badge badge-${a.status}`}>{a.status}</span>
+                  </div>
+                ))}
+                {enrichedApps.length === 0 && <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '20px 0' }}>No applications yet</div>}
+              </div>
+              <div className="card">
+                <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom:16 }}>Quick Actions</h3>
+                {[
+                  { label: 'Post a New Job', icon: '📝', action: () => { setPage('jobs'); setShowJobModal(true); } },
+                  { label: 'View All Candidates', icon: '👥', action: () => setPage('candidates') },
+                  { label: 'View Rankings', icon: '🏆', action: () => setPage('ranking') },
+                  { label: 'Skill Gap Analysis', icon: '📊', action: () => setPage('skillgap') },
+                  { label: 'Interview Prep', icon: '💬', action: () => setPage('interview') },
+                  { label: 'Manage Admins', icon: '🛡️', action: () => setPage('admins') },
+                ].map((qa, i) => (
+                  <button key={i} onClick={qa.action} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', marginBottom: 8, textAlign: 'left' }}>
+                    <span style={{ fontSize: 18 }}>{qa.icon}</span><span style={{ fontSize: 14, fontWeight: 500 }}>{qa.label}</span><i className="fas fa-chevron-right" style={{ marginLeft: 'auto', color: 'var(--muted)', fontSize: 12 }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {page === 'candidates' && !detailApp && (
+          <div>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+              <div className="search-bar" style={{ flex: 1, minWidth: 200 }}><i className="fas fa-search" /><input placeholder="Search candidates or jobs..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: 160 }}>
+                <option value="all">All Status</option><option value="pending">Pending</option><option value="reviewed">Reviewed</option><option value="selected">Selected</option><option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <table>
+                <thead><tr><th>Candidate</th><th>Job Applied</th><th>Match Score</th><th>Status</th><th>Applied</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {filteredApps.map(a => (
+                    <tr key={a.id}>
+                      <td><div style={{ fontWeight: 600 }}>{a.candidate_name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{a.candidate_email}</div></td>
+                      <td style={{ color: 'var(--muted)' }}>{a.job_title}</td>
+                      <td>{a.match_score != null ? (<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ height: 6, background: 'var(--border)', borderRadius: 4, overflow: 'hidden', width: 60 }}><div style={{ height: '100%', width: `${a.match_score}%`, background: a.match_score >= 70 ? '#22c55e' : a.match_score >= 40 ? '#f59e0b' : '#ef4444', borderRadius: 4 }} /></div><span style={{ fontSize: 13, fontWeight: 600 }}>{a.match_score}%</span></div>) : '—'}</td>
+                      <td><span className={`badge badge-${a.status}`}>{a.status}</span></td>
+                      <td style={{ color: 'var(--muted)', fontSize: 13 }}>{new Date(a.applied_at).toLocaleDateString()}</td>
+                      <td><div style={{ display: 'flex', gap: 6 }}><button className="btn-secondary btn-sm" onClick={() => setDetailApp(a)}>View</button><button className="btn-secondary btn-sm" onClick={() => downloadResume(a)}>📄 Resume</button></div></td>
+                    </tr>
+                  ))}
+                  {filteredApps.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No applications found</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {page === 'candidates' && detailApp && (
+          <div>
+            <button className="btn-secondary" style={{ marginBottom: 16 }} onClick={() => { setDetailApp(null); setSubPage(null); }}>← Back to Candidates</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div className="card">
+                <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Candidate Information</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div><span style={{ color: 'var(--muted)', fontSize: 13 }}>Name</span><div style={{ fontWeight: 600 }}>{detailApp.candidate_name}</div></div>
+                  <div><span style={{ color: 'var(--muted)', fontSize: 13 }}>Email</span><div>{detailApp.candidate_email}</div></div>
+                  <div><span style={{ color: 'var(--muted)', fontSize: 13 }}>Applied For</span><div style={{ fontWeight: 600 }}>{detailApp.job_title}</div></div>
+                  <div><span style={{ color: 'var(--muted)', fontSize: 13 }}>Match Score</span><div style={{ fontSize: 24, fontWeight: 700, color: detailApp.match_score >= 70 ? '#22c55e' : detailApp.match_score >= 40 ? '#f59e0b' : '#ef4444' }}>{detailApp.match_score}%</div></div>
+                  {detailApp.candidate_exp!=null && <div><span style={{ color: 'var(--muted)', fontSize: 13 }}>Experience Detected</span><div>{detailApp.candidate_exp} years</div></div>}
+                  {detailApp.education && detailApp.education.length>0 && <div><span style={{ color: 'var(--muted)', fontSize: 13 }}>Education Detected</span><div>{detailApp.education.join(', ')}</div></div>}
+                  <div><span style={{ color: 'var(--muted)', fontSize: 13 }}>Applied On</span><div>{new Date(detailApp.applied_at).toLocaleString()}</div></div>
+                </div>
+                <button className="btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={()=>downloadResume(detailApp)}>📄 Download Resume</button>
+              </div>
+              <div className="card">
+                <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Update Status</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {['pending','reviewed','selected','rejected'].map(s => (
+                    <button key={s} onClick={() => handleUpdateStatus(detailApp.id, s)}
+                      style={{ padding: '12px', borderRadius: 8, fontWeight: 600, background: detailApp.status === s ? (s === 'selected' ? '#166534' : s === 'rejected' ? '#7f1d1d' : s === 'reviewed' ? '#312e81' : '#78350f') : 'var(--border)', color: detailApp.status === s ? '#fff' : 'var(--text)', border: detailApp.status === s ? `2px solid ${s === 'selected' ? '#22c55e' : s === 'rejected' ? '#ef4444' : s === 'reviewed' ? '#818cf8' : '#f59e0b'}` : '2px solid transparent' }}>
+                      {detailApp.status === s ? '✓ ' : ''}{s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize:12, color:'var(--muted)', marginTop:10 }}>Candidate is automatically notified in-app and via simulated email when status changes.</div>
+              </div>
+              <div className="card" style={{ gridColumn: '1/-1' }}>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                  <button className="btn-primary btn-sm" onClick={() => setSubPage('skillgap')}>📊 Skill Gap Analysis</button>
+                  <button className="btn-primary btn-sm" onClick={() => setSubPage('interview')}>💬 Interview Questions</button>
+                </div>
+                {subPage === 'skillgap' && (
+                  <div>
+                    <h4 style={{ marginBottom: 12 }}>Skill Gap Analysis</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      <div><div style={{ color: '#22c55e', fontWeight: 600, marginBottom: 8 }}>✅ Matching Skills</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{(detailApp.matched_skills||[]).length ? detailApp.matched_skills.map((s, i) => <span key={i} style={{ background: 'rgba(34,197,94,.15)', color: '#22c55e', padding: '4px 10px', borderRadius: 20, fontSize: 12 }}>{s}</span>) : <span style={{ color: 'var(--muted)' }}>None</span>}</div></div>
+                      <div><div style={{ color: '#ef4444', fontWeight: 600, marginBottom: 8 }}>❌ Missing Skills</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{(detailApp.missing_skills||[]).length ? detailApp.missing_skills.map((s, i) => <span key={i} style={{ background: 'rgba(239,68,68,.15)', color: '#ef4444', padding: '4px 10px', borderRadius: 20, fontSize: 12 }}>{s}</span>) : <span style={{ color: 'var(--muted)' }}>None — great match!</span>}</div></div>
+                    </div>
+                  </div>
+                )}
+                {subPage === 'interview' && (
+                  <div>
+                    <h4 style={{ marginBottom: 12 }}>Suggested Interview Questions</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {[...(getJob(detailApp.job_id).skills_required||'').split(',').filter(Boolean).slice(0,5).map(s=>`Can you describe your experience with ${s.trim()}?`),
+                        'Tell me about a challenging project you\'ve worked on.',
+                        'How do you prioritize tasks when working under pressure?',
+                        'Describe a situation where you had to learn a new technology quickly.',
+                        'How do you handle disagreements with team members?',
+                        'What are your long-term career goals?'].slice(0,10).map((q, i) => (
+                        <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: '12px 16px', fontSize: 14, display: 'flex', gap: 10 }}><span style={{ color: 'var(--blue-light)', fontWeight: 700 }}>Q{i + 1}.</span><span>{q}</span></div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {page === 'jobs' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
+            {jobs.map(job => (
+              <div key={job.id} className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div><div style={{ fontSize: 16, fontWeight: 700 }}>{job.title}</div><div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{job.department && <span>🏢 {job.department} &nbsp;</span>}{job.location && <span>📍 {job.location} &nbsp;</span>}<span>💼 {job.job_type}</span></div></div>
+                  <span className="badge" style={{ background: job.is_active ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)', color: job.is_active ? '#22c55e' : '#ef4444' }}>{job.is_active ? '● Active' : '● Inactive'}</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 12 }}>{job.description}</p>
+                {job.skills_required && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>{job.skills_required.split(',').slice(0, 5).map((s, i) => <span key={i} style={{ fontSize: 11, padding: '3px 8px', background: 'rgba(99,102,241,.15)', color: '#818cf8', borderRadius: 20 }}>{s.trim()}</span>)}</div>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: 'var(--muted)' }}>📋 {applications.filter(a=>a.job_id===job.id).length} applications</span>
+                  {job.is_active && <button className="btn-danger btn-sm" onClick={() => handleDeactivateJob(job.id)}>Deactivate</button>}
+                </div>
+              </div>
+            ))}
+            {jobs.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px', color: 'var(--muted)' }}><div style={{ fontSize: 50, marginBottom: 12 }}>💼</div><div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No Jobs Posted</div><button className="btn-primary" onClick={() => setShowJobModal(true)}>+ Post First Job</button></div>}
+          </div>
+        )}
+
+        {page === 'ranking' && (
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}><h3 style={{ fontSize: 16, fontWeight: 600 }}>Candidate Rankings by Match Score</h3></div>
+            <table>
+              <thead><tr><th style={{ width: 50 }}>Rank</th><th>Candidate</th><th>Job</th><th>Match Score</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                {[...enrichedApps].sort((a, b) => (b.match_score || 0) - (a.match_score || 0)).map((a, i) => (
+                  <tr key={a.id}>
+                    <td><div style={{ width: 32, height: 32, borderRadius: 50, background: i < 3 ? ['#f59e0b', '#94a3b8', '#b45309'][i] + '20' : 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: i < 3 ? ['#f59e0b', '#94a3b8', '#b45309'][i] : 'var(--muted)', fontSize: 13 }}>{i < 3 ? ['🥇', '🥈', '🥉'][i] : `#${i + 1}`}</div></td>
+                    <td><div style={{ fontWeight: 600 }}>{a.candidate_name}</div><div style={{ fontSize: 12, color: 'var(--muted)' }}>{a.candidate_email}</div></td>
+                    <td style={{ color: 'var(--muted)' }}>{a.job_title}</td>
+                    <td><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 80, height: 6, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}><div style={{ height: '100%', width: `${a.match_score}%`, background: a.match_score >= 70 ? '#22c55e' : a.match_score >= 40 ? '#f59e0b' : '#ef4444', borderRadius: 4 }} /></div><span style={{ fontWeight: 700, fontSize: 14 }}>{a.match_score}%</span></div></td>
+                    <td><span className={`badge badge-${a.status}`}>{a.status}</span></td>
+                    <td><button className="btn-success btn-sm" onClick={() => handleUpdateStatus(a.id, 'selected')}>Select</button></td>
+                  </tr>
+                ))}
+                {enrichedApps.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No applications yet</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {page === 'skillgap' && (
+          <div>
+            <div className="card" style={{ marginBottom: 20 }}><p style={{ color: 'var(--muted)' }}>Click any row to view detailed skill gap analysis for that candidate.</p></div>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <table>
+                <thead><tr><th>Candidate</th><th>Job</th><th>Match Score</th><th>Action</th></tr></thead>
+                <tbody>
+                  {enrichedApps.map(a => (
+                    <tr key={a.id}>
+                      <td><div style={{ fontWeight: 600 }}>{a.candidate_name}</div></td>
+                      <td style={{ color: 'var(--muted)' }}>{a.job_title}</td>
+                      <td><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 80, height: 6, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}><div style={{ height: '100%', width: `${a.match_score}%`, background: a.match_score >= 70 ? '#22c55e' : a.match_score >= 40 ? '#f59e0b' : '#ef4444', borderRadius: 4 }} /></div><span>{a.match_score}%</span></div></td>
+                      <td><button className="btn-secondary btn-sm" onClick={() => { setPage('candidates'); setDetailApp(a); setSubPage('skillgap'); }}>View Analysis</button></td>
+                    </tr>
+                  ))}
+                  {enrichedApps.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No applications yet</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {page === 'interview' && (
+          <div>
+            <div className="card" style={{ marginBottom: 20 }}><p style={{ color: 'var(--muted)' }}>Generate interview questions for each candidate based on job requirements.</p></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
+              {enrichedApps.map(a => (
+                <div key={a.id} className="card">
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>{a.candidate_name}</div>
+                  <div style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>{a.job_title}</div>
+                  <button className="btn-primary" style={{ width: '100%' }} onClick={() => { setPage('candidates'); setDetailApp(a); setSubPage('interview'); }}>💬 Generate Questions</button>
+                </div>
+              ))}
+              {enrichedApps.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px', color: 'var(--muted)' }}><div style={{ fontSize: 50, marginBottom: 12 }}>💬</div><div>No candidates to interview yet</div></div>}
+            </div>
+          </div>
+        )}
+
+        {page === 'analytics' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}><h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, alignSelf: 'flex-start' }}>Application Status Distribution</h3><canvas ref={chartRef} style={{ maxWidth: 280, maxHeight: 280 }} /></div>
+              <div className="card">
+                <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Key Metrics</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[
+                    { label: 'Total Applications', value: stats.total_applications, color: '#2563EB' },
+                    { label: 'Selection Rate', value: `${stats.total_applications ? Math.round((stats.selected / stats.total_applications) * 100) : 0}%`, color: '#22c55e' },
+                    { label: 'Rejection Rate', value: `${stats.total_applications ? Math.round((stats.rejected / stats.total_applications) * 100) : 0}%`, color: '#ef4444' },
+                    { label: 'Avg Match Score', value: `${stats.avg_match_score}%`, color: '#f59e0b' },
+                    { label: 'Active Jobs', value: stats.total_jobs, color: '#8b5cf6' },
+                    { label: 'Total Candidates', value: stats.total_candidates, color: '#0891b2' },
+                  ].map((m, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}><span style={{ color: 'var(--muted)', fontSize: 14 }}>{m.label}</span><span style={{ fontWeight: 700, fontSize: 18, color: m.color }}>{m.value}</span></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="card">
+              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Top Performing Candidates</h3>
+              <table>
+                <thead><tr><th>Candidate</th><th>Job</th><th>Match Score</th><th>Status</th></tr></thead>
+                <tbody>
+                  {[...enrichedApps].sort((a, b) => (b.match_score || 0) - (a.match_score || 0)).slice(0, 5).map(a => (
+                    <tr key={a.id}><td style={{ fontWeight: 600 }}>{a.candidate_name}</td><td style={{ color: 'var(--muted)' }}>{a.job_title}</td><td><span style={{ fontWeight: 700, color: a.match_score >= 70 ? '#22c55e' : a.match_score >= 40 ? '#f59e0b' : '#ef4444' }}>{a.match_score}%</span></td><td><span className={`badge badge-${a.status}`}>{a.status}</span></td></tr>
+                  ))}
+                  {enrichedApps.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--muted)' }}>No data</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {page === 'admins' && (
+          <div>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <table>
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Added On</th></tr></thead>
+                <tbody>
+                  {admins.map(a => (
+                    <tr key={a.id}><td style={{ fontWeight: 600 }}>{a.name}</td><td style={{ color: 'var(--muted)' }}>{a.email}</td><td><span className="badge" style={{ background: a.is_super_admin ? 'rgba(245,158,11,.15)' : 'rgba(37,99,235,.15)', color: a.is_super_admin ? '#f59e0b' : 'var(--blue-light)' }}>{a.is_super_admin ? '⭐ Super Admin' : 'Admin'}</span></td><td style={{ color: 'var(--muted)', fontSize: 13 }}>{new Date(a.created_at).toLocaleDateString()}</td></tr>
+                  ))}
+                  {admins.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No admins found</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            {!user.is_super_admin && <div style={{ marginTop: 20, padding: 16, background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.3)', borderRadius: 8, color: '#fcd34d', fontSize: 14 }}>⚠️ Only Super Admins can add new administrators.</div>}
+          </div>
+        )}
+
+        {page === 'emaillog' && (
+          <div>
+            <div className="card" style={{ marginBottom:20 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+                <h3 style={{ fontSize:16, fontWeight:600 }}>📧 Email Provider Settings (EmailJS)</h3>
+                <span className="badge" style={{ background: isEmailJSReady() ? 'rgba(34,197,94,.15)':'rgba(245,158,11,.15)', color: isEmailJSReady() ? '#22c55e':'#f59e0b' }}>{isEmailJSReady() ? '● Connected — sending real emails' : '● Not configured — using demo log'}</span>
+              </div>
+              <p style={{ color:'var(--muted)', fontSize:13, marginBottom:14 }}>Configure your EmailJS account (free at emailjs.com, connect your Gmail there) so verification codes, new-application alerts, and status updates send as real emails on any device — desktop or mobile.</p>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
+                <div><label>Public Key</label><input placeholder="EmailJS Public Key" value={emailCfg.publicKey} onChange={e=>setEmailCfg(c=>({...c, publicKey:e.target.value}))} /></div>
+                <div><label>Service ID</label><input placeholder="e.g. service_xxxx" value={emailCfg.serviceId} onChange={e=>setEmailCfg(c=>({...c, serviceId:e.target.value}))} /></div>
+                <div><label>Template ID</label><input placeholder="e.g. template_xxxx" value={emailCfg.templateId} onChange={e=>setEmailCfg(c=>({...c, templateId:e.target.value}))} /></div>
+              </div>
+              <button className="btn-primary" onClick={()=>{ saveEmailJSConfig(emailCfg); showToast('Email provider settings saved', 'success'); refresh(); }}>💾 Save Email Settings</button>
+            </div>
+            <div className="card" style={{ padding:0, overflow:'hidden' }}>
+              <table>
+                <thead><tr><th>To</th><th>Subject</th><th>Body</th><th>Type</th><th>Sent</th></tr></thead>
+                <tbody>
+                  {emailLog.map((e,i)=>(
+                    <tr key={i}><td>{e.to}</td><td style={{fontWeight:600}}>{e.subject}</td><td style={{color:'var(--muted)', fontSize:12, maxWidth:300}}>{e.body}</td><td><span className="badge" style={{ background: e.real ? 'rgba(34,197,94,.15)':'rgba(148,163,184,.15)', color: e.real ? '#22c55e':'var(--muted)' }}>{e.real ? '✓ Real email' : 'Demo log'}</span></td><td style={{color:'var(--muted)', fontSize:12}}>{new Date(e.sent_at).toLocaleString()}</td></tr>
+                  ))}
+                  {emailLog.length===0 && <tr><td colSpan={4} style={{textAlign:'center', padding:40, color:'var(--muted)'}}>No emails sent yet</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showJobModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowJobModal(false)}>
+          <div className="modal modal-lg scrollbar" style={{ overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}><h2 style={{ fontSize: 18, fontWeight: 700 }}>Post New Job</h2><button onClick={() => setShowJobModal(false)} style={{ background: 'none', color: 'var(--muted)', fontSize: 20 }}>×</button></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="form-group" style={{ gridColumn: '1/-1' }}><label>Job Title *</label><input placeholder="e.g. Senior React Developer" value={jobForm.title} onChange={e => setJobForm(f => ({ ...f, title: e.target.value }))} /></div>
+              <div className="form-group"><label>Department</label><input placeholder="Engineering" value={jobForm.department} onChange={e => setJobForm(f => ({ ...f, department: e.target.value }))} /></div>
+              <div className="form-group"><label>Location</label><input placeholder="Remote / Mumbai" value={jobForm.location} onChange={e => setJobForm(f => ({ ...f, location: e.target.value }))} /></div>
+              <div className="form-group"><label>Job Type</label><select value={jobForm.job_type} onChange={e => setJobForm(f => ({ ...f, job_type: e.target.value }))}><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option></select></div>
+              <div className="form-group"><label>Experience Required</label><input placeholder="2+ years" value={jobForm.experience_required} onChange={e => setJobForm(f => ({ ...f, experience_required: e.target.value }))} /></div>
+              <div className="form-group" style={{ gridColumn: '1/-1' }}><label>Skills Required (comma separated)</label><input placeholder="React, Python, SQL" value={jobForm.skills_required} onChange={e => setJobForm(f => ({ ...f, skills_required: e.target.value }))} /></div>
+              <div className="form-group" style={{ gridColumn: '1/-1' }}><label>Job Description *</label><textarea rows={6} placeholder="Describe the role, responsibilities, qualifications..." value={jobForm.description} onChange={e => setJobForm(f => ({ ...f, description: e.target.value }))} style={{ resize: 'vertical' }} /></div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}><button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowJobModal(false)}>Cancel</button><button className="btn-primary" style={{ flex: 1 }} onClick={handleCreateJob}>📝 Post Job</button></div>
+          </div>
+        </div>
+      )}
+
+      {showAdminModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowAdminModal(false)}>
+          <div className="modal">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}><h2 style={{ fontSize: 18, fontWeight: 700 }}>Add New Admin</h2><button onClick={() => setShowAdminModal(false)} style={{ background: 'none', color: 'var(--muted)', fontSize: 20 }}>×</button></div>
+            <div className="form-group"><label>Full Name</label><input placeholder="Admin Name" value={adminForm.name} onChange={e => setAdminForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div className="form-group"><label>Email Address</label><input type="email" placeholder="admin@company.com" value={adminForm.email} onChange={e => setAdminForm(f => ({ ...f, email: e.target.value }))} /></div>
+            <div className="form-group"><label>Password</label><input type="password" placeholder="••••••••" value={adminForm.password} onChange={e => setAdminForm(f => ({ ...f, password: e.target.value }))} /></div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}><button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowAdminModal(false)}>Cancel</button><button className="btn-primary" style={{ flex: 1 }} onClick={handleAddAdmin}>+ Add Admin</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// APP ROOT
+// ═══════════════════════════════════════════════════════════════════════════════
+function App() {
+  const { user, role, login, logout } = useAuth();
+  const [toast, setToast] = useState(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(()=>{
+    seedAdmin().then(()=>setReady(true));
+    const cfg = getEmailJSConfig();
+    if(cfg && cfg.publicKey && window.emailjs){ try{ emailjs.init({ publicKey: cfg.publicKey }); }catch(e){} }
+  }, []);
+
+  const showToast = (message, type = 'success') => setToast({ message, type, id: Date.now() });
+
+  if(!ready) return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--muted)'}}>Loading...</div>;
+
+  if (!user || !role) {
+    return (<><LoginPage onLogin={login} showToast={showToast} />{toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}</>);
+  }
+
+  return (<>
+    {role === 'admin' ? <AdminPortal user={user} onLogout={logout} showToast={showToast} /> : <CandidatePortal user={user} onLogout={logout} showToast={showToast} />}
+    {toast && <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+  </>);
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
